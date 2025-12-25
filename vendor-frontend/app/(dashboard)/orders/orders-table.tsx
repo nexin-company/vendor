@@ -83,10 +83,6 @@ export function OrdersTable({ orders }: OrdersTableProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Órdenes</CardTitle>
-        <CardDescription>Listado de órdenes (cabecera). El detalle se agregará en la siguiente iteración.</CardDescription>
-      </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>

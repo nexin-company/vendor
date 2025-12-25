@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Customer, customersApi } from '@/lib/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TableSearch } from '@/components/table-search';
@@ -79,35 +79,8 @@ export function CustomersPageClient({ initialCustomers }: CustomersPageClientPro
   return (
     <div className="flex flex-1 flex-col p-4 md:p-6 space-y-4">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <div>
-            <CardTitle>Clientes</CardTitle>
-            <CardDescription>Gestiona tu cartera de clientes.</CardDescription>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={handleCreate}>Nuevo cliente</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingCustomer ? 'Editar cliente' : 'Nuevo cliente'}</DialogTitle>
-                <DialogDescription>
-                  {editingCustomer ? 'Actualiza la información del cliente.' : 'Completa los datos para crear un cliente.'}
-                </DialogDescription>
-              </DialogHeader>
-              <CustomerForm
-                customer={editingCustomer}
-                onSuccess={() => {
-                  setIsDialogOpen(false);
-                  handleRefresh();
-                }}
-                onCancel={() => setIsDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
         <CardContent>
-          <div className="mb-4">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <TableSearch
               placeholder="Buscar por nombre, email o teléfono..."
               initialValue={search}
@@ -116,6 +89,27 @@ export function CustomersPageClient({ initialCustomers }: CustomersPageClientPro
                 setPage(1);
               }}
             />
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={handleCreate}>Nuevo cliente</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingCustomer ? 'Editar cliente' : 'Nuevo cliente'}</DialogTitle>
+                  <DialogDescription>
+                    {editingCustomer ? 'Actualiza la información del cliente.' : 'Completa los datos para crear un cliente.'}
+                  </DialogDescription>
+                </DialogHeader>
+                <CustomerForm
+                  customer={editingCustomer}
+                  onSuccess={() => {
+                    setIsDialogOpen(false);
+                    handleRefresh();
+                  }}
+                  onCancel={() => setIsDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
           <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
             <span>

@@ -43,7 +43,7 @@ export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
 
   return (
     <div className="flex flex-1 flex-col p-4 md:p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div className="text-sm text-muted-foreground">
           Gestiona órdenes, líneas, descuentos y pagos manuales.
         </div>
@@ -52,7 +52,6 @@ export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
             <File className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Exportar</span>
           </Button>
-
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="h-8 gap-1">

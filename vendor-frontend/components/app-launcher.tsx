@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Grip, Banknote } from 'lucide-react';
+import { Grip, Banknote, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -21,10 +21,17 @@ interface App {
 
 const apps: App[] = [
   {
+    id: 'permit',
+    name: 'Permit',
+    icon: <Shield className="h-6 w-6" />,
+    href: 'https://permit.juampamillan.com',
+    description: 'Sistema de gestión HRMS',
+  },
+  {
     id: 'vendor',
     name: 'Vendor',
     icon: <Banknote className="h-6 w-6" />,
-    href: '/',
+    href: 'https://vendor.juampamillan.com',
     description: 'Sistema de gestión de productos y ventas',
   },
   // Aquí se pueden agregar más aplicaciones del ecosistema en el futuro

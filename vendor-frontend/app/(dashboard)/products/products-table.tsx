@@ -10,87 +10,41 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle
 } from '@/components/ui/card';
 import { Product as ProductRow } from './product-row';
-import { Product as ProductType, productsApi } from '@/lib/api';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Product as ProductType } from '@/lib/api';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TableSearch } from '@/components/table-search';
-import { useState, useEffect } from 'react';
 import { TableCell } from '@/components/ui/table';
 
 interface ProductsTableProps {
   products: ProductType[];
   total: number;
-  offset: number | null;
+  currentOffset: number;
+  nextOffset: number | null;
   onRefresh: () => void;
+  onPrevPage: () => void;
+  onNextPage: () => void;
 }
 
 export function ProductsTable({
   products,
   total,
-  offset,
+  currentOffset,
+  nextOffset,
   onRefresh,
+  onPrevPage,
+  onNextPage,
 }: ProductsTableProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
-  const productsPerPage = 5;
-  const currentOffset = searchParams.get('offset') ? Number(searchParams.get('offset')) : productsPerPage;
+  const PRODUCTS_PER_PAGE = 5;
 
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (searchTerm) {
-      params.set('q', searchTerm);
-    } else {
-      params.delete('q');
-    }
-    params.delete('offset'); // Reset offset on search
-    router.push(`/products?${params.toString()}`);
-  }, [searchTerm, router, searchParams]);
-
-  function prevPage() {
-    const params = new URLSearchParams(searchParams.toString());
-    const newOffset = Math.max(productsPerPage, currentOffset - productsPerPage);
-    if (newOffset === productsPerPage) {
-      params.delete('offset');
-    } else {
-      params.set('offset', newOffset.toString());
-    }
-    router.push(`/products?${params.toString()}`);
-  }
-
-  function nextPage() {
-    if (offset === null) return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('offset', offset.toString());
-    router.push(`/products?${params.toString()}`);
-  }
-
-  const startIndex = Math.max(0, currentOffset - productsPerPage);
+  const startIndex = Math.max(0, currentOffset - PRODUCTS_PER_PAGE);
   const endIndex = Math.min(currentOffset, total);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Productos</CardTitle>
-        <CardDescription>
-          Gestiona tus productos y visualiza su rendimiento de ventas.
-        </CardDescription>
-      </CardHeader>
       <CardContent>
-        <div className="mb-4">
-          <TableSearch
-            placeholder="Buscar productos..."
-            initialValue={searchTerm}
-            onSearch={setSearchTerm}
-          />
-        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -135,19 +89,19 @@ export function ProductsTable({
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={prevPage}
+              onClick={onPrevPage}
               variant="ghost"
               size="sm"
-              disabled={currentOffset === productsPerPage}
+              disabled={currentOffset === PRODUCTS_PER_PAGE}
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
               Anterior
             </Button>
             <Button
-              onClick={nextPage}
+              onClick={onNextPage}
               variant="ghost"
               size="sm"
-              disabled={offset === null}
+              disabled={nextOffset === null}
             >
               Siguiente
               <ChevronRight className="ml-2 h-4 w-4" />
