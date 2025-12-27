@@ -27,6 +27,10 @@ const PERMIT_API_KEY = process.env.PERMIT_API_KEY || '';
 const VENDOR_API_URL = process.env.VENDOR_API_URL || PERMIT_API_URL;
 const VENDOR_API_KEY = process.env.VENDOR_API_KEY || PERMIT_API_KEY;
 
+// Para productos externos, consultar directamente a inventory-backend
+const INVENTORY_API_URL = process.env.INVENTORY_API_URL || 'http://localhost:8000';
+const INVENTORY_API_KEY = process.env.INVENTORY_API_KEY || '';
+
 if (!PERMIT_API_KEY) {
   console.warn('⚠️ PERMIT_API_KEY no está configurada. Las llamadas al backend pueden fallar.');
 }
@@ -124,8 +128,14 @@ export const usersApi = {
 export const productsApi = {
   /**
    * Listar productos externos (solo lectura - desde Inventory)
+   * Consulta directamente a inventory-backend
    */
   getAll: async (filters?: ProductFilters): Promise<{ products: Product[]; total: number; offset: number | null }> => {
+    const session = await auth();
+    if (!session?.user) {
+      throw new ApiError('No autenticado', 401);
+    }
+
     const params = new URLSearchParams();
     if (filters?.search) params.set('q', filters.search);
     if (filters?.status) params.set('status', filters.status);
@@ -133,21 +143,60 @@ export const productsApi = {
     if (filters?.limit) params.set('limit', filters.limit.toString());
     
     const query = params.toString();
-    const res = await fetchApi<{ data: Product[]; total?: number; offset?: number | null; limit?: number | null }>(
-      `/v1/external-products${query ? `?${query}` : ''}`
-    );
+    const url = `${INVENTORY_API_URL}/v1/external-products${query ? `?${query}` : ''}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': INVENTORY_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new ApiError(
+        errorData.message || `HTTP error! status: ${response.status}`,
+        response.status,
+        errorData
+      );
+    }
+
+    const res = await response.json();
     return {
-      products: res.data,
-      total: res.total ?? res.data.length,
+      products: res.data || [],
+      total: res.total ?? res.data?.length ?? 0,
       offset: res.offset ?? null,
     };
   },
 
   /**
    * Obtener producto externo por ID (solo lectura - desde Inventory)
+   * Consulta directamente a inventory-backend
    */
   getById: async (id: number): Promise<Product> => {
-    const res = await fetchApi<{ data: Product }>(`/v1/external-products/${id}`);
+    const session = await auth();
+    if (!session?.user) {
+      throw new ApiError('No autenticado', 401);
+    }
+
+    const url = `${INVENTORY_API_URL}/v1/external-products/${id}`;
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': INVENTORY_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new ApiError(
+        errorData.message || `HTTP error! status: ${response.status}`,
+        response.status,
+        errorData
+      );
+    }
+
+    const res = await response.json();
     return res.data;
   },
 };

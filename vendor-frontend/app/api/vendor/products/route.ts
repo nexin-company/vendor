@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { applyRateLimit, addRateLimitHeaders } from '@/lib/rate-limit-helper';
 
-const VENDOR_API_URL = process.env.VENDOR_API_URL || 'http://localhost:8000';
-const VENDOR_API_KEY = process.env.VENDOR_API_KEY || '';
+// Consultar directamente a inventory-backend para productos externos
+const INVENTORY_API_URL = process.env.INVENTORY_API_URL || 'http://localhost:8000';
+const INVENTORY_API_KEY = process.env.INVENTORY_API_KEY || '';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
@@ -21,8 +22,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    // Cambiar a external-products (solo lectura desde Inventory)
-    const url = new URL(`${VENDOR_API_URL}/v1/external-products`);
+    // Consultar directamente a inventory-backend para productos externos
+    const url = new URL(`${INVENTORY_API_URL}/v1/external-products`);
     
     // Pasar todos los query params
     searchParams.forEach((value, key) => {
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch(url.toString(), {
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': VENDOR_API_KEY,
+        'X-API-Key': INVENTORY_API_KEY,
       },
     });
 
