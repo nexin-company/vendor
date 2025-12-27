@@ -10,6 +10,8 @@
 export * from './api-keys/schema'
 
 // Vendor Schemas
+// Nota: products schema se mantiene solo para migraciones y seed, pero ya no se usa en la API
+// Los productos externos se gestionan en inventory-backend
 export * from './vendor/products/schema'
 export * from './vendor/customers/schema'
 export * from './vendor/orders/schema'

@@ -14,6 +14,7 @@ interface ExternalProduct {
   status: string
   basePrice: number
   currency: string
+  imageUrl?: string | null
 }
 
 interface StockLevel {
@@ -30,6 +31,41 @@ interface Mapping {
   internalItemId: number
   externalProductId: number
   note?: string | null
+}
+
+/**
+ * Obtener producto externo por ID
+ */
+export async function inventoryGetExternalProductById(
+  externalProductId: number
+): Promise<ExternalProduct | null> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), INVENTORY_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(
+      `${INVENTORY_API_URL}/v1/external-products/${externalProductId}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': INVENTORY_API_KEY,
+        },
+        signal: controller.signal,
+      }
+    )
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      return null
+    }
+
+    const result = await response.json()
+    return result.data || null
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    return null
+  }
 }
 
 /**

@@ -10,8 +10,6 @@ import {
   UpdateUserInput, 
   User,
   Product,
-  CreateProductInput,
-  UpdateProductInput,
   ProductFilters,
   Customer,
   CreateCustomerInput,
@@ -89,8 +87,6 @@ export type {
   CreateUserInput,
   UpdateUserInput,
   Product,
-  CreateProductInput,
-  UpdateProductInput,
   ProductFilters,
   Customer,
   CreateCustomerInput,
@@ -121,9 +117,14 @@ export const usersApi = {
     }, true),
 };
 
-// ==================== PRODUCTOS ====================
+// ==================== PRODUCTOS EXTERNOS (desde Inventory) ====================
+// Nota: Los productos externos se gestionan en inventory-backend
+// Vendor solo puede consultarlos (solo lectura) para crear órdenes
 
 export const productsApi = {
+  /**
+   * Listar productos externos (solo lectura - desde Inventory)
+   */
   getAll: async (filters?: ProductFilters): Promise<{ products: Product[]; total: number; offset: number | null }> => {
     const params = new URLSearchParams();
     if (filters?.search) params.set('q', filters.search);
@@ -133,7 +134,7 @@ export const productsApi = {
     
     const query = params.toString();
     const res = await fetchApi<{ data: Product[]; total?: number; offset?: number | null; limit?: number | null }>(
-      `/v1/products${query ? `?${query}` : ''}`
+      `/v1/external-products${query ? `?${query}` : ''}`
     );
     return {
       products: res.data,
@@ -142,29 +143,12 @@ export const productsApi = {
     };
   },
 
+  /**
+   * Obtener producto externo por ID (solo lectura - desde Inventory)
+   */
   getById: async (id: number): Promise<Product> => {
-    const res = await fetchApi<{ data: Product }>(`/v1/products/${id}`);
+    const res = await fetchApi<{ data: Product }>(`/v1/external-products/${id}`);
     return res.data;
-  },
-
-  create: async (data: CreateProductInput): Promise<Product> => {
-    return fetchApi<Product>('/v1/products', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  update: async (id: number, data: UpdateProductInput): Promise<Product> => {
-    return fetchApi<Product>(`/v1/products/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  delete: async (id: number): Promise<{ message: string; product: Product }> => {
-    return fetchApi<{ message: string; product: Product }>(`/v1/products/${id}`, {
-      method: 'DELETE',
-    });
   },
 };
 

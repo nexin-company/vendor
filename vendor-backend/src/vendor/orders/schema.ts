@@ -1,7 +1,6 @@
 import { pgTable, serial, integer, text, timestamp, numeric, pgEnum } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { customers } from "../customers/schema";
-import { products } from "../products/schema";
 
 /**
  * Enum para el estado de la orden
@@ -23,12 +22,15 @@ export const orders = pgTable("orders", {
 /**
  * Líneas de orden (order items)
  * Nota: guardamos snapshot de nombre/precios para que la orden no dependa del cambio de catálogo.
+ * externalProductId referencia a external_products en inventory-backend.
  */
 export const orderItems = pgTable("order_items", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull().references(() => orders.id, { onDelete: 'cascade' }),
-  productId: integer("product_id").references(() => products.id, { onDelete: 'set null' }),
+  externalProductId: integer("external_product_id"), // Referencia a inventory external_products
+  productId: integer("product_id"), // Legacy: mantener temporalmente para migración
   productName: text("product_name").notNull(),
+  productSku: text("product_sku"), // SKU del producto externo (snapshot)
   quantity: integer("quantity").notNull(),
   unitPriceBase: numeric("unit_price_base", { precision: 10, scale: 2 }).notNull(),
   unitPriceFinal: numeric("unit_price_final", { precision: 10, scale: 2 }).notNull(),
@@ -86,10 +88,6 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   order: one(orders, {
     fields: [orderItems.orderId],
     references: [orders.id],
-  }),
-  product: one(products, {
-    fields: [orderItems.productId],
-    references: [products.id],
   }),
 }));
 

@@ -1,15 +1,12 @@
 import { db } from '../../db.js'
 import { orders, orderItems, paymentRecords, orderStatusEvents } from './schema.js'
 import { customers } from '../customers/schema.js'
-import { products } from '../products/schema.js'
 import { eq } from 'drizzle-orm'
 import { emitPermitAuditLog } from '../../audit/permit-client.js'
 import { financeCreateArPayment } from '../../integrations/finance-client.js'
-import {
-	inventoryFindExternalProductByName,
-	inventoryGetTotalAvailableStock,
-	inventoryGetMappingToInternalItem,
-} from '../../integrations/inventory-client.js'
+// Nota: El backend de vendor NO consulta inventory directamente
+// El frontend consulta inventory y envía toda la información necesaria
+// El backend solo guarda los datos que recibe
 import { factoryCreateProductionOrder } from '../../integrations/factory-client.js'
 
 export interface CreateOrderInput {
@@ -17,7 +14,9 @@ export interface CreateOrderInput {
 	status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
 	total?: number
 	items?: Array<{
-		productId: number
+		externalProductId: number // ID del producto externo en inventory
+		productName: string // Snapshot del nombre (el frontend lo envía)
+		productSku?: string // Snapshot del SKU (el frontend lo envía)
 		quantity: number
 		unitPriceBase?: number
 		unitPriceFinal?: number
@@ -153,13 +152,13 @@ export class OrdersService {
 
 			if (data.items && data.items.length > 0) {
 				for (const item of data.items) {
-					const product = await db.select().from(products).where(eq(products.id, item.productId))
-					if (product.length === 0) {
-						throw new Error(`Producto con ID ${item.productId} no encontrado`)
+					// El frontend envía toda la información necesaria
+					// El backend solo guarda lo que recibe, sin consultar inventory
+					if (!item.productName) {
+						throw new Error(`productName es requerido para el item con externalProductId ${item.externalProductId}`)
 					}
 
-					const productRow = product[0]!
-					const unitBase = item.unitPriceBase ?? Number(productRow.price)
+					const unitBase = item.unitPriceBase ?? 0
 					const unitFinal = item.unitPriceFinal ?? unitBase
 					const discountAmount = item.discountAmount ?? 0
 					const discountPercent = item.discountPercent ?? 0
@@ -169,8 +168,9 @@ export class OrdersService {
 					computedTotal += lineTotal
 
 					itemsToInsert.push({
-						productId: item.productId,
-						productName: productRow.name,
+						externalProductId: item.externalProductId,
+						productName: item.productName,
+						productSku: item.productSku || null,
 						quantity: item.quantity,
 						unitPriceBase: unitBase.toString(),
 						unitPriceFinal: unitFinal.toString(),
@@ -179,39 +179,9 @@ export class OrdersService {
 						lineTotal: lineTotal.toString(),
 					})
 
-					// Verificar stock en Inventory (sin bloquear si falla)
-					try {
-						// Buscar producto externo en Inventory por nombre
-						const externalProduct = await inventoryFindExternalProductByName(productRow.name)
-						
-						if (externalProduct) {
-							// Obtener stock disponible total
-							const availableStock = await inventoryGetTotalAvailableStock(externalProduct.id)
-							
-							// Si no hay stock suficiente, preparar orden de producción
-							if (availableStock < item.quantity) {
-								// Buscar mapeo a item interno de Factory
-								const mapping = await inventoryGetMappingToInternalItem(externalProduct.id)
-								
-								if (mapping) {
-									// Calcular cantidad a producir (diferencia entre lo solicitado y lo disponible)
-									const quantityToProduce = item.quantity - availableStock
-									
-									// Guardar para crear después de tener el orderId
-									pendingProductionOrders.push({
-										productName: productRow.name,
-										internalItemId: mapping.internalItemId,
-										quantity: quantityToProduce,
-										availableStock,
-										requestedQuantity: item.quantity,
-									})
-								}
-							}
-						}
-					} catch (stockError: any) {
-						// Silencioso: si no podemos verificar stock, no bloqueamos la creación de la orden
-						console.error(`Error al verificar stock para producto ${productRow.name}:`, stockError)
-					}
+					// Nota: La verificación de stock y creación de órdenes de producción
+					// se puede hacer desde el frontend o desde un proceso asíncrono separado
+					// El backend de vendor no debe hacer consultas cruzadas a inventory
 				}
 			}
 

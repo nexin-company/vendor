@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Grip, Banknote, Shield } from 'lucide-react';
+import { Grip, Banknote, Shield, Package, Factory, Truck, ShoppingCart, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -33,6 +33,41 @@ const apps: App[] = [
     icon: <Banknote className="h-6 w-6" />,
     href: 'https://vendor.juampamillan.com',
     description: 'Sistema de gestión de productos y ventas',
+  },
+  {
+    id: 'inventory',
+    name: 'Inventory',
+    icon: <Package className="h-6 w-6" />,
+    href: 'https://inventory.juampamillan.com',
+    description: 'Sistema de gestión de stock',
+  },
+  {
+    id: 'factory',
+    name: 'Factory',
+    icon: <Factory className="h-6 w-6" />,
+    href: 'https://factory.juampamillan.com',
+    description: 'Sistema de gestión de manufactura',
+  },
+  {
+    id: 'shipments',
+    name: 'Shipments',
+    icon: <Truck className="h-6 w-6" />,
+    href: 'https://shipments.juampamillan.com',
+    description: 'Sistema de gestión de embarques',
+  },
+  {
+    id: 'procurement',
+    name: 'Procurement',
+    icon: <ShoppingCart className="h-6 w-6" />,
+    href: 'https://procurement.juampamillan.com',
+    description: 'Sistema de gestión de compras',
+  },
+  {
+    id: 'finance',
+    name: 'Finance',
+    icon: <Receipt className="h-6 w-6" />,
+    href: 'https://finance.juampamillan.com',
+    description: 'Sistema de gestión de finanzas',
   },
   // Aquí se pueden agregar más aplicaciones del ecosistema en el futuro
 ];

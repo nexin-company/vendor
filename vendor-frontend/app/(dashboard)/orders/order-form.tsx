@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from '@/lib/toast';
 
 type OrderLineDraft = {
-  productId: number | null;
+  externalProductId: number | null; // Cambiado de productId a externalProductId
   quantity: number;
   unitPriceFinal?: number;
   discountAmount?: number;
@@ -24,7 +24,7 @@ export function OrderForm(props: { onCreated: () => void }) {
 
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [lines, setLines] = useState<OrderLineDraft[]>([
-    { productId: null, quantity: 1, discountAmount: 0, discountPercent: 0 },
+    { externalProductId: null, quantity: 1, discountAmount: 0, discountPercent: 0 },
   ]);
 
   useEffect(() => {
@@ -45,10 +45,10 @@ export function OrderForm(props: { onCreated: () => void }) {
   const totals = useMemo(() => {
     let total = 0;
     for (const line of lines) {
-      if (!line.productId) continue;
-      const product = products.find((p) => p.id === line.productId);
+      if (!line.externalProductId) continue;
+      const product = products.find((p) => p.id === line.externalProductId);
       if (!product) continue;
-      const unitBase = Number(product.price);
+      const unitBase = Number(product.basePrice); // Cambiado de price a basePrice
       const unitFinal = line.unitPriceFinal ?? unitBase;
       const qty = Number(line.quantity || 0);
       const raw = unitFinal * qty;
@@ -62,7 +62,7 @@ export function OrderForm(props: { onCreated: () => void }) {
   }, [lines, products]);
 
   const addLine = () => {
-    setLines((prev) => [...prev, { productId: null, quantity: 1, discountAmount: 0, discountPercent: 0 }]);
+    setLines((prev) => [...prev, { externalProductId: null, quantity: 1, discountAmount: 0, discountPercent: 0 }]);
   };
 
   const removeLine = (idx: number) => {
@@ -80,14 +80,23 @@ export function OrderForm(props: { onCreated: () => void }) {
     }
 
     const normalized = lines
-      .filter((l) => l.productId && l.quantity > 0)
-      .map((l) => ({
-        productId: l.productId!,
-        quantity: Number(l.quantity),
-        unitPriceFinal: l.unitPriceFinal !== undefined ? Number(l.unitPriceFinal) : undefined,
-        discountAmount: l.discountAmount !== undefined ? Number(l.discountAmount) : undefined,
-        discountPercent: l.discountPercent !== undefined ? Number(l.discountPercent) : undefined,
-      }));
+      .filter((l) => l.externalProductId && l.quantity > 0)
+      .map((l) => {
+        const product = products.find((p) => p.id === l.externalProductId);
+        if (!product) {
+          throw new Error(`Producto con ID ${l.externalProductId} no encontrado`);
+        }
+        return {
+          externalProductId: l.externalProductId!,
+          productName: product.name, // El frontend envía el nombre desde inventory
+          productSku: product.sku, // El frontend envía el SKU desde inventory
+          quantity: Number(l.quantity),
+          unitPriceBase: product.basePrice, // Precio base desde inventory
+          unitPriceFinal: l.unitPriceFinal !== undefined ? Number(l.unitPriceFinal) : product.basePrice,
+          discountAmount: l.discountAmount !== undefined ? Number(l.discountAmount) : undefined,
+          discountPercent: l.discountPercent !== undefined ? Number(l.discountPercent) : undefined,
+        };
+      });
 
     if (normalized.length === 0) {
       toast.error('Agrega al menos una línea');
@@ -147,16 +156,16 @@ export function OrderForm(props: { onCreated: () => void }) {
               <div className="md:col-span-5 space-y-1">
                 <Label>Producto</Label>
                 <Select
-                  value={line.productId ? String(line.productId) : undefined}
-                  onValueChange={(v) => updateLine(idx, { productId: Number(v) })}
+                  value={line.externalProductId ? String(line.externalProductId) : undefined}
+                  onValueChange={(v) => updateLine(idx, { externalProductId: Number(v) })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Producto" />
+                    <SelectValue placeholder="Producto externo" />
                   </SelectTrigger>
                   <SelectContent>
                     {products.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)}>
-                        {p.name} (${Number(p.price).toFixed(2)})
+                        {p.name} (${Number(p.basePrice).toFixed(2)} {p.currency || 'MXN'})
                       </SelectItem>
                     ))}
                   </SelectContent>

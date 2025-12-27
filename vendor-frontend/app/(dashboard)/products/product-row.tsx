@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { INVENTORY_FRONTEND_URL } from '@/lib/config';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +16,6 @@ import { TableCell, TableRow } from '@/components/ui/table';
 import { Product as ProductType, productsApi, inventoryApi } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { useState, useEffect } from 'react';
-import { DeleteConfirmDialog } from '@/components/delete-confirm-dialog';
 import Link from 'next/link';
 import {
   Tooltip,
@@ -29,26 +29,13 @@ interface ProductProps {
 }
 
 export function Product({ product, onRefresh }: ProductProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [realStock, setRealStock] = useState<number | null>(null);
   const [isLoadingStock, setIsLoadingStock] = useState(false);
   const [hasMapping, setHasMapping] = useState(false);
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await productsApi.delete(product.id);
-      toast.success('Producto eliminado correctamente');
-      onRefresh();
-    } catch (error) {
-      console.error('Error al eliminar producto:', error);
-      toast.error('Error al eliminar el producto');
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-    }
-  };
+  // Nota: Los productos externos se gestionan en inventory-backend
+  // Vendor solo puede consultarlos (solo lectura)
+  // La eliminación/edición se hace desde inventory-frontend
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -68,21 +55,13 @@ export function Product({ product, onRefresh }: ProductProps) {
     const loadInventoryData = async () => {
       setIsLoadingStock(true);
       try {
-        // Buscar producto externo por nombre
-        const externalProduct = await inventoryApi.getExternalProductByName(product.name);
-        if (externalProduct) {
-          // Si encontramos el producto, obtener stock total disponible
-          const totalStock = await inventoryApi.getTotalAvailableStock(externalProduct.id);
-          setRealStock(totalStock);
-          
-          // Verificar si tiene mapeos con items internos
-          const mappings = await inventoryApi.getMappingsByExternalProduct(externalProduct.id);
-          setHasMapping(mappings.length > 0);
-        } else {
-          // Si no se encuentra, usar el stock del backend de Vendor (legacy)
-          setRealStock(null);
-          setHasMapping(false);
-        }
+        // El producto ya es un external product, usar su ID directamente
+        const totalStock = await inventoryApi.getTotalAvailableStock(product.id);
+        setRealStock(totalStock);
+        
+        // Verificar si tiene mapeos con items internos
+        const mappings = await inventoryApi.getMappingsByExternalProduct(product.id);
+        setHasMapping(mappings.length > 0);
       } catch (error) {
         console.error('Error al cargar datos desde Inventory:', error);
         setRealStock(null);
@@ -93,7 +72,7 @@ export function Product({ product, onRefresh }: ProductProps) {
     };
 
     loadInventoryData();
-  }, [product.name]);
+  }, [product.id]);
 
   const formatDate = (date: string | Date) => {
     const d = new Date(date);
@@ -104,41 +83,52 @@ export function Product({ product, onRefresh }: ProductProps) {
     });
   };
 
-  // Mostrar stock real si está disponible, sino mostrar stock legacy
-  const displayStock = realStock !== null ? realStock : product.stock;
-  const stockLabel = realStock !== null ? 'Stock (Inventory)' : 'Stock (Vendor)';
+  // Mostrar stock real desde Inventory
+  const displayStock = realStock !== null ? realStock : 0;
+  const stockLabel = 'Stock disponible';
 
   return (
     <>
       <TableRow>
         <TableCell className="hidden sm:table-cell">
-          <Image
-            alt="Imagen del producto"
-            className="aspect-square rounded-md object-cover"
-            height="64"
-            src={product.imageUrl}
-            width="64"
-          />
+          {product.imageUrl ? (
+            <Image
+              alt="Imagen del producto"
+              className="aspect-square rounded-md object-cover"
+              height="64"
+              src={product.imageUrl}
+              width="64"
+            />
+          ) : (
+            <div className="aspect-square rounded-md bg-muted flex items-center justify-center">
+              <span className="text-xs text-muted-foreground">Sin imagen</span>
+            </div>
+          )}
         </TableCell>
         <TableCell className="font-medium">
-          <div className="flex items-center gap-2">
-            <span>{product.name}</span>
-            {hasMapping && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link2 className="h-4 w-4 text-blue-500" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Este producto tiene mapeo con items internos de Factory</p>
-                </TooltipContent>
-              </Tooltip>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span>{product.name}</span>
+              {hasMapping && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link2 className="h-4 w-4 text-blue-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Este producto tiene mapeo con items internos de Factory</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            {product.sku && (
+              <span className="text-xs text-muted-foreground">SKU: {product.sku}</span>
             )}
           </div>
         </TableCell>
         <TableCell>
           {getStatusBadge(product.status)}
         </TableCell>
-        <TableCell className="hidden md:table-cell">{`$${product.price}`}</TableCell>
+        <TableCell className="hidden md:table-cell">{`$${product.basePrice} ${product.currency || 'MXN'}`}</TableCell>
         <TableCell className="hidden md:table-cell">
           {isLoadingStock ? (
             <span className="text-muted-foreground text-sm">Cargando...</span>
@@ -154,39 +144,29 @@ export function Product({ product, onRefresh }: ProductProps) {
           )}
         </TableCell>
         <TableCell className="hidden md:table-cell">
-          {formatDate(product.availableAt)}
+          {formatDate(product.createdAt)}
         </TableCell>
         <TableCell>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button aria-haspopup="true" size="icon" variant="ghost">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Menú de acciones</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link href={`/products/${product.id}/edit`}>Editar</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setShowDeleteDialog(true)}
-                className="text-destructive"
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                asChild
+                size="icon" 
+                variant="ghost"
+                title="Los productos externos se gestionan en Inventory"
               >
-                Eliminar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <Link href={`${INVENTORY_FRONTEND_URL}/external-products/${product.id}`} target="_blank">
+                  <Link2 className="h-4 w-4" />
+                  <span className="sr-only">Ver en Inventory</span>
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Ver/editar en Inventory (solo lectura en Vendor)</p>
+            </TooltipContent>
+          </Tooltip>
         </TableCell>
       </TableRow>
-      <DeleteConfirmDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirm={handleDelete}
-        title="Eliminar producto"
-        description={`¿Estás seguro de que deseas eliminar el producto "${product.name}"? Esta acción no se puede deshacer.`}
-        isLoading={isDeleting}
-      />
     </>
   );
 }

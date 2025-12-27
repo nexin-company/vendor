@@ -15,7 +15,9 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "bun run src/seed.ts",
     "db:seed:preprod": "bun run src/seed-preprod.ts",
-    "db:reset": "bun run db:push && bun run db:seed"
+    "db:reset": "bun run db:push && bun run db:seed",
+    "migrate:products": "bun run src/migrate-products-to-inventory.ts",
+    "migrate:order-items": "bun run src/migrate-order-items.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

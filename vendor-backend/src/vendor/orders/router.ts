@@ -107,7 +107,9 @@ export const ordersRouter = new Elysia({ prefix: '/orders' })
 				])),
 				total: t.Optional(t.Union([t.Number(), t.String()])),
 				items: t.Optional(t.Array(t.Object({
-					productId: t.Number(),
+					externalProductId: t.Number(),
+					productName: t.String(), // Snapshot del nombre (el frontend lo envía)
+					productSku: t.Optional(t.String()), // Snapshot del SKU (el frontend lo envía)
 					quantity: t.Number(),
 					unitPriceBase: t.Optional(t.Union([t.Number(), t.String()])),
 					unitPriceFinal: t.Optional(t.Union([t.Number(), t.String()])),

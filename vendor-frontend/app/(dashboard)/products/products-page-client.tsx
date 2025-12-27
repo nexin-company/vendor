@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Product, productsApi } from '@/lib/api';
+import { INVENTORY_FRONTEND_URL } from '@/lib/config';
 import { ProductsTable } from './products-table';
 import { TableSkeleton } from '@/components/table-skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +10,11 @@ import { Button } from '@/components/ui/button';
 import { File, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { TableSearch } from '@/components/table-search';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ProductsPageClientProps {
   initialProducts: Product[];
@@ -130,14 +136,21 @@ export function ProductsPageClient({
                 Exportar
               </span>
             </Button>
-            <Button asChild size="sm" className="h-8 gap-1">
-              <Link href="/products/new">
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Agregar Producto
-                </span>
-              </Link>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button asChild size="sm" className="h-8 gap-1" variant="outline">
+                  <Link href={`${INVENTORY_FRONTEND_URL}/external-products`} target="_blank">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                      Gestionar en Inventory
+                    </span>
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Los productos externos se gestionan en Inventory</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>

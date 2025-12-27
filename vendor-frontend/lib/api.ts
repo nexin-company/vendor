@@ -98,45 +98,38 @@ export const usersApi = {
   },
 };
 
-// ==================== PRODUCTOS ====================
+// ==================== PRODUCTOS EXTERNOS (desde Inventory) ====================
+// Nota: Los productos externos se gestionan en inventory-backend
+// Vendor solo puede consultarlos (solo lectura) para crear órdenes
 
-export interface Product {
+export interface ExternalProduct {
   id: number;
-  imageUrl: string;
+  sku: string;
   name: string;
   status: 'active' | 'inactive' | 'archived';
-  price: number;
-  stock: number;
-  availableAt: string | Date;
+  basePrice: number;
+  currency: string;
+  imageUrl?: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
-export interface CreateProductInput {
-  imageUrl: string;
-  name: string;
-  status: 'active' | 'inactive' | 'archived';
-  price: number;
-  stock: number;
-  availableAt: string;
-}
-
-export interface UpdateProductInput {
-  imageUrl?: string;
-  name?: string;
-  status?: 'active' | 'inactive' | 'archived';
-  price?: number;
-  stock?: number;
-  availableAt?: string;
-}
-
-export interface ProductFilters {
+export interface ExternalProductFilters {
   search?: string;
   status?: 'active' | 'inactive' | 'archived';
   offset?: number;
   limit?: number;
 }
 
+// Alias para compatibilidad con código existente
+export type Product = ExternalProduct;
+export type ProductFilters = ExternalProductFilters;
+
 export const productsApi = {
-  getAll: async (filters?: ProductFilters): Promise<{ products: Product[]; total: number; offset: number | null }> => {
+  /**
+   * Listar productos externos (solo lectura - desde Inventory)
+   */
+  getAll: async (filters?: ExternalProductFilters): Promise<{ products: ExternalProduct[]; total: number; offset: number | null }> => {
     const params = new URLSearchParams();
     if (filters?.search) params.set('q', filters.search);
     if (filters?.status) params.set('status', filters.status);
@@ -144,9 +137,9 @@ export const productsApi = {
     if (filters?.limit) params.set('limit', filters.limit.toString());
     
     const query = params.toString();
-    const res = await fetchApi<{ data: Product[]; total: number; offset: number | null; limit: number | null }>(
+    const res = await fetchApi<{ data: ExternalProduct[]; total: number; offset: number | null; limit: number | null }>(
       VENDOR_API_BASE_URL,
-      `/products${query ? `?${query}` : ''}`
+      `/external-products${query ? `?${query}` : ''}`
     );
     return {
       products: res.data,
@@ -155,31 +148,17 @@ export const productsApi = {
     };
   },
 
-  getById: async (id: number): Promise<Product> => {
-    const res = await fetchApi<{ data: Product }>(VENDOR_API_BASE_URL, `/products/${id}`);
+  /**
+   * Obtener producto externo por ID (solo lectura - desde Inventory)
+   */
+  getById: async (id: number): Promise<ExternalProduct> => {
+    const res = await fetchApi<{ data: ExternalProduct }>(VENDOR_API_BASE_URL, `/external-products/${id}`);
     return res.data;
   },
-
-  create: async (data: CreateProductInput): Promise<Product> => {
-    return fetchApi<Product>(VENDOR_API_BASE_URL, '/products', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  update: async (id: number, data: UpdateProductInput): Promise<Product> => {
-    return fetchApi<Product>(VENDOR_API_BASE_URL, `/products/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  delete: async (id: number): Promise<{ message: string; product: Product }> => {
-    return fetchApi<{ message: string; product: Product }>(VENDOR_API_BASE_URL, `/products/${id}`, {
-      method: 'DELETE',
-    });
-  },
 };
+
+// Exportar también como externalProductsApi para claridad
+export const externalProductsApi = productsApi;
 
 // ==================== CLIENTES ====================
 
@@ -256,8 +235,10 @@ export interface Order {
 export interface OrderItem {
   id: number;
   orderId: number;
-  productId: number | null;
+  externalProductId: number | null; // Cambiado de productId a externalProductId
+  productId: number | null; // Legacy: mantener para compatibilidad con datos antiguos
   productName: string;
+  productSku?: string | null; // SKU del producto externo (snapshot)
   quantity: number;
   unitPriceBase: number;
   unitPriceFinal: number;
@@ -332,7 +313,9 @@ export interface CreateOrderInput {
   status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   total?: number;
   items?: Array<{
-    productId: number;
+    externalProductId: number; // ID del producto externo en inventory
+    productName: string; // Snapshot del nombre (el frontend lo envía)
+    productSku?: string; // Snapshot del SKU (el frontend lo envía)
     quantity: number;
     unitPriceBase?: number;
     unitPriceFinal?: number;

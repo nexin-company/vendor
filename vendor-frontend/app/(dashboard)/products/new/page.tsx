@@ -1,11 +1,9 @@
-import { ProductNewPageClient } from './product-new-page-client';
+import { redirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
+/**
+ * Los productos externos se gestionan en Inventory
+ * Redirigir a la página de productos (solo lectura)
+ */
 export default function NewProductPage() {
-  return (
-    <ProductNewPageClient />
-  );
+  redirect('/products');
 }
-
-

@@ -57,7 +57,7 @@ export function ProductsTable({
               <TableHead className="hidden md:table-cell">
                 Stock
               </TableHead>
-              <TableHead className="hidden md:table-cell">Disponible desde</TableHead>
+              <TableHead className="hidden md:table-cell">Creado</TableHead>
               <TableHead>
                 <span className="sr-only">Acciones</span>
               </TableHead>
