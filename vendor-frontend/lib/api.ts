@@ -6,10 +6,10 @@
 // Nota: usamos proxies distintos para mantener API keys en el servidor.
 // - Permit: usuarios + notificaciones
 // - Vendor: productos + clientes + órdenes
-// - Inventory: stock + mapeos (lectura)
+// - Logistics: catálogo + stock + mapeos + shipments (lectura)
 const PERMIT_API_BASE_URL = '/api/permit';
 const VENDOR_API_BASE_URL = '/api/vendor';
-const INVENTORY_API_BASE_URL = '/api/inventory';
+const LOGISTIC_API_BASE_URL = '/api/logistic';
 
 class ApiError extends Error {
   constructor(
@@ -98,8 +98,8 @@ export const usersApi = {
   },
 };
 
-// ==================== PRODUCTOS EXTERNOS (desde Inventory) ====================
-// Nota: Los productos externos se gestionan en inventory-backend
+// ==================== PRODUCTOS EXTERNOS (desde Logistics) ====================
+// Nota: Los productos externos se gestionan en logistic-backend
 // Vendor solo puede consultarlos (solo lectura) para crear órdenes
 
 export interface ExternalProduct {
@@ -297,14 +297,12 @@ export interface ShipmentDetail extends Shipment {
   events: ShipmentEvent[];
 }
 
-const SHIPMENTS_API_BASE_URL = '/api/shipments';
-
 export const shipmentsApi = {
   getByOrderId: async (orderId: number): Promise<Shipment[]> => {
-    return fetchApi<Shipment[]>(SHIPMENTS_API_BASE_URL, `/shipments?orderId=${orderId}`);
+    return fetchApi<Shipment[]>(LOGISTIC_API_BASE_URL, `/v1/shipments?orderId=${orderId}`);
   },
   getById: async (shipmentId: number): Promise<ShipmentDetail> => {
-    return fetchApi<ShipmentDetail>(SHIPMENTS_API_BASE_URL, `/shipments/${shipmentId}`);
+    return fetchApi<ShipmentDetail>(LOGISTIC_API_BASE_URL, `/v1/shipments/${shipmentId}`);
   },
 };
 
@@ -313,7 +311,7 @@ export interface CreateOrderInput {
   status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   total?: number;
   items?: Array<{
-    externalProductId: number; // ID del producto externo en inventory
+    externalProductId: number; // ID del producto externo en logistics
     productName: string; // Snapshot del nombre (el frontend lo envía)
     productSku?: string; // Snapshot del SKU (el frontend lo envía)
     quantity: number;
@@ -447,7 +445,7 @@ export const notificationsApi = {
   },
 };
 
-// ==================== INVENTORY (Stock y Mapeos - Lectura) ====================
+// ==================== LOGISTICS (Stock, Mapeos y Shipments - Lectura) ====================
 
 export interface ExternalProduct {
   id: number;
@@ -487,8 +485,8 @@ export const inventoryApi = {
   getExternalProductBySku: async (sku: string): Promise<ExternalProduct | null> => {
     try {
       const res = await fetchApi<{ data: ExternalProduct[] }>(
-        INVENTORY_API_BASE_URL,
-        `/v1/external-products?q=${encodeURIComponent(sku)}`
+        LOGISTIC_API_BASE_URL,
+        `/v1/catalog?q=${encodeURIComponent(sku)}`
       );
       // Buscar coincidencia exacta de SKU primero
       let product = res.data.find(p => p.sku.toLowerCase() === sku.toLowerCase());
@@ -519,8 +517,8 @@ export const inventoryApi = {
   getStockLevelsByProduct: async (externalProductId: number): Promise<StockLevel[]> => {
     try {
       const res = await fetchApi<{ data: StockLevel[] }>(
-        INVENTORY_API_BASE_URL,
-        `/v1/stock-levels?externalProductId=${externalProductId}`
+        LOGISTIC_API_BASE_URL,
+        `/v1/stock?externalProductId=${externalProductId}`
       );
       // Asegurar que siempre devolvemos un array
       const stockLevels = Array.isArray(res.data) ? res.data : [];
@@ -555,7 +553,7 @@ export const inventoryApi = {
   getMappingsByExternalProduct: async (externalProductId: number): Promise<Mapping[]> => {
     try {
       const res = await fetchApi<{ data: Mapping[] }>(
-        INVENTORY_API_BASE_URL,
+        LOGISTIC_API_BASE_URL,
         `/v1/mappings/internal-to-external?externalProductId=${externalProductId}`
       );
       return res.data;

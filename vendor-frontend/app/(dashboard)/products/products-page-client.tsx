@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Product, productsApi } from '@/lib/api';
-import { INVENTORY_FRONTEND_URL } from '@/lib/config';
+import { LOGISTIC_FRONTEND_URL } from '@/lib/config';
 import { ProductsTable } from './products-table';
 import { TableSkeleton } from '@/components/table-skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -139,7 +139,7 @@ export function ProductsPageClient({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button asChild size="sm" className="h-8 gap-1" variant="outline">
-                  <Link href={`${INVENTORY_FRONTEND_URL}/external-products`} target="_blank">
+                  <Link href={`${LOGISTIC_FRONTEND_URL}/catalog`} target="_blank">
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                       Gestionar en Inventory

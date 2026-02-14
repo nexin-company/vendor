@@ -1,11 +1,11 @@
 /**
- * Cliente para Inventory Backend
+ * Cliente para Logistics Backend (antes Inventory)
  * Maneja timeouts, retries y audit logging en fallos
  */
 
-const INVENTORY_API_URL = process.env.INVENTORY_API_URL || 'http://localhost:8000'
-const INVENTORY_API_KEY = process.env.INVENTORY_API_KEY || process.env.VENDOR_API_KEY || ''
-const INVENTORY_TIMEOUT_MS = 5000 // 5 segundos
+const LOGISTIC_API_URL = process.env.LOGISTIC_API_URL || 'http://localhost:8004'
+const LOGISTIC_API_KEY = process.env.LOGISTIC_API_KEY || process.env.VENDOR_API_KEY || ''
+const LOGISTIC_TIMEOUT_MS = 5000 // 5 segundos
 
 interface ExternalProduct {
   id: number
@@ -40,15 +40,15 @@ export async function inventoryGetExternalProductById(
   externalProductId: number
 ): Promise<ExternalProduct | null> {
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), INVENTORY_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), LOGISTIC_TIMEOUT_MS)
 
   try {
     const response = await fetch(
-      `${INVENTORY_API_URL}/v1/external-products/${externalProductId}`,
+      `${LOGISTIC_API_URL}/v1/catalog/${externalProductId}`,
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': INVENTORY_API_KEY,
+          'X-API-Key': LOGISTIC_API_KEY,
         },
         signal: controller.signal,
       }
@@ -75,15 +75,15 @@ export async function inventoryFindExternalProductByName(
   productName: string
 ): Promise<ExternalProduct | null> {
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), INVENTORY_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), LOGISTIC_TIMEOUT_MS)
 
   try {
     const response = await fetch(
-      `${INVENTORY_API_URL}/v1/external-products?q=${encodeURIComponent(productName)}`,
+      `${LOGISTIC_API_URL}/v1/catalog?q=${encodeURIComponent(productName)}`,
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': INVENTORY_API_KEY,
+          'X-API-Key': LOGISTIC_API_KEY,
         },
         signal: controller.signal,
       }
@@ -119,11 +119,11 @@ export async function inventoryFindExternalProductByName(
     if (error.name === 'AbortError' || error.message.includes('fetch')) {
       try {
         const retryResponse = await fetch(
-          `${INVENTORY_API_URL}/v1/external-products?q=${encodeURIComponent(productName)}`,
+          `${LOGISTIC_API_URL}/v1/catalog?q=${encodeURIComponent(productName)}`,
           {
             headers: {
               'Content-Type': 'application/json',
-              'X-API-Key': INVENTORY_API_KEY,
+              'X-API-Key': LOGISTIC_API_KEY,
             },
           }
         )
@@ -157,15 +157,15 @@ export async function inventoryGetTotalAvailableStock(
   externalProductId: number
 ): Promise<number> {
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), INVENTORY_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), LOGISTIC_TIMEOUT_MS)
 
   try {
     const response = await fetch(
-      `${INVENTORY_API_URL}/v1/stock-levels?externalProductId=${externalProductId}`,
+      `${LOGISTIC_API_URL}/v1/stock?externalProductId=${externalProductId}`,
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': INVENTORY_API_KEY,
+          'X-API-Key': LOGISTIC_API_KEY,
         },
         signal: controller.signal,
       }
@@ -191,11 +191,11 @@ export async function inventoryGetTotalAvailableStock(
     if (error.name === 'AbortError' || error.message.includes('fetch')) {
       try {
         const retryResponse = await fetch(
-          `${INVENTORY_API_URL}/v1/stock-levels?externalProductId=${externalProductId}`,
+          `${LOGISTIC_API_URL}/v1/stock?externalProductId=${externalProductId}`,
           {
             headers: {
               'Content-Type': 'application/json',
-              'X-API-Key': INVENTORY_API_KEY,
+              'X-API-Key': LOGISTIC_API_KEY,
             },
           }
         )
@@ -225,15 +225,15 @@ export async function inventoryGetMappingToInternalItem(
   externalProductId: number
 ): Promise<Mapping | null> {
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), INVENTORY_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), LOGISTIC_TIMEOUT_MS)
 
   try {
     const response = await fetch(
-      `${INVENTORY_API_URL}/v1/mappings/internal-to-external?externalProductId=${externalProductId}`,
+      `${LOGISTIC_API_URL}/v1/mappings/internal-to-external?externalProductId=${externalProductId}`,
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': INVENTORY_API_KEY,
+          'X-API-Key': LOGISTIC_API_KEY,
         },
         signal: controller.signal,
       }

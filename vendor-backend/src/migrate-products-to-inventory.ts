@@ -1,15 +1,15 @@
 /**
- * Script de migración: Products (Vendor) → External Products (Inventory)
+ * Script de migración: Products (Vendor) → External Products (Logistics)
  * 
- * Este script migra los productos de vendor-backend a inventory-backend
+ * Este script migra los productos de vendor-backend a logistic-backend
  * como external_products.
  * 
  * Ejecutar con: bun run src/migrate-products-to-inventory.ts
  * 
  * Requiere:
  * - VENDOR_DATABASE_URL: URL de la base de datos de vendor
- * - INVENTORY_API_URL: URL del backend de inventory
- * - INVENTORY_API_KEY: API key para inventory
+ * - LOGISTIC_API_URL: URL del backend de logistics
+ * - LOGISTIC_API_KEY: API key para logistics
  */
 
 import { neon } from '@neondatabase/serverless'
@@ -17,16 +17,16 @@ import { drizzle } from 'drizzle-orm/neon-http'
 import { products } from './vendor/products/schema.js'
 
 const VENDOR_DATABASE_URL = process.env.VENDOR_DATABASE_URL || process.env.DATABASE_URL || ''
-const INVENTORY_API_URL = process.env.INVENTORY_API_URL || 'http://localhost:8000'
-const INVENTORY_API_KEY = process.env.INVENTORY_API_KEY || process.env.VENDOR_API_KEY || ''
+const LOGISTIC_API_URL = process.env.LOGISTIC_API_URL || 'http://localhost:8004'
+const LOGISTIC_API_KEY = process.env.LOGISTIC_API_KEY || process.env.VENDOR_API_KEY || ''
 
 if (!VENDOR_DATABASE_URL) {
   console.error('❌ VENDOR_DATABASE_URL no está configurada')
   process.exit(1)
 }
 
-if (!INVENTORY_API_KEY) {
-  console.error('❌ INVENTORY_API_KEY no está configurada')
+if (!LOGISTIC_API_KEY) {
+  console.error('❌ LOGISTIC_API_KEY no está configurada')
   process.exit(1)
 }
 
@@ -54,11 +54,11 @@ async function createExternalProduct(product: any): Promise<number | null> {
   try {
     const sku = generateSku(product.name, product.id)
     
-    const response = await fetch(`${INVENTORY_API_URL}/v1/external-products`, {
+    const response = await fetch(`${LOGISTIC_API_URL}/v1/catalog`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': INVENTORY_API_KEY,
+        'X-API-Key': LOGISTIC_API_KEY,
       },
       body: JSON.stringify({
         sku,
@@ -95,10 +95,10 @@ async function createExternalProduct(product: any): Promise<number | null> {
  */
 async function productExistsInInventory(sku: string): Promise<boolean> {
   try {
-    const response = await fetch(`${INVENTORY_API_URL}/v1/external-products?q=${encodeURIComponent(sku)}`, {
+    const response = await fetch(`${LOGISTIC_API_URL}/v1/catalog?q=${encodeURIComponent(sku)}`, {
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': INVENTORY_API_KEY,
+        'X-API-Key': LOGISTIC_API_KEY,
       },
     })
 
@@ -118,9 +118,9 @@ async function productExistsInInventory(sku: string): Promise<boolean> {
 }
 
 async function migrate() {
-  console.log('🚀 Iniciando migración de productos de Vendor a Inventory...')
+  console.log('🚀 Iniciando migración de productos de Vendor a Logistics...')
   console.log(`📦 Vendor DB: ${VENDOR_DATABASE_URL.substring(0, 30)}...`)
-  console.log(`🔗 Inventory API: ${INVENTORY_API_URL}`)
+  console.log(`🔗 Logistics API: ${LOGISTIC_API_URL}`)
   console.log('')
 
   try {
@@ -144,7 +144,7 @@ async function migrate() {
       // Verificar si ya existe
       const exists = await productExistsInInventory(sku)
       if (exists) {
-        console.log(`⏭️  Producto ${product.id} (${product.name}) ya existe en Inventory, omitiendo...`)
+        console.log(`⏭️  Producto ${product.id} (${product.name}) ya existe en Logistics, omitiendo...`)
         skipped++
         continue
       }

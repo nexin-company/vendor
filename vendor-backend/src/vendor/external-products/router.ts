@@ -1,6 +1,6 @@
 /**
- * Router para consultar productos externos desde Inventory
- * Solo lectura - los productos externos se gestionan en inventory-backend
+ * Router para consultar productos externos desde Logistics
+ * Solo lectura - los productos externos se gestionan en logistic-backend
  */
 
 import { Elysia, t } from 'elysia'
@@ -18,8 +18,8 @@ export const externalProductsRouter = new Elysia({ prefix: '/external-products' 
 		'/',
 		async ({ query }) => {
 			try {
-				const INVENTORY_API_URL = process.env.INVENTORY_API_URL || 'http://localhost:8000'
-				const INVENTORY_API_KEY = process.env.INVENTORY_API_KEY || process.env.VENDOR_API_KEY || ''
+				const LOGISTIC_API_URL = process.env.LOGISTIC_API_URL || 'http://localhost:8004'
+				const LOGISTIC_API_KEY = process.env.LOGISTIC_API_KEY || process.env.VENDOR_API_KEY || ''
 
 				const params = new URLSearchParams()
 				if ((query as any)?.q) params.set('q', (query as any).q)
@@ -27,11 +27,11 @@ export const externalProductsRouter = new Elysia({ prefix: '/external-products' 
 				if ((query as any)?.offset) params.set('offset', (query as any).offset)
 				if ((query as any)?.limit) params.set('limit', (query as any).limit)
 
-				const url = `${INVENTORY_API_URL}/v1/external-products${params.toString() ? `?${params.toString()}` : ''}`
+				const url = `${LOGISTIC_API_URL}/v1/catalog${params.toString() ? `?${params.toString()}` : ''}`
 				const response = await fetch(url, {
 					headers: {
 						'Content-Type': 'application/json',
-						'X-API-Key': INVENTORY_API_KEY,
+						'X-API-Key': LOGISTIC_API_KEY,
 					},
 				})
 
@@ -54,12 +54,12 @@ export const externalProductsRouter = new Elysia({ prefix: '/external-products' 
 			}),
 			detail: {
 				tags: ['external-products'],
-				summary: 'Listar productos externos (desde Inventory) - Solo lectura',
+				summary: 'Listar productos externos (desde Logistics) - Solo lectura',
 			},
 		}
 	)
 	/**
-	 * GET /external-products/:id - Obtener producto externo por ID (proxy a Inventory)
+	 * GET /external-products/:id - Obtener producto externo por ID (proxy a Logistics)
 	 */
 	.get(
 		'/:id',
@@ -78,7 +78,7 @@ export const externalProductsRouter = new Elysia({ prefix: '/external-products' 
 			params: t.Object({ id: t.Numeric() }),
 			detail: {
 				tags: ['external-products'],
-				summary: 'Obtener producto externo por ID (desde Inventory) - Solo lectura',
+				summary: 'Obtener producto externo por ID (desde Logistics) - Solo lectura',
 			},
 		}
 	)

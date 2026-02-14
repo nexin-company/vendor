@@ -2,13 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { applyRateLimit, addRateLimitHeaders } from '@/lib/rate-limit-helper';
 
-const SHIPMENTS_API_URL = process.env.SHIPMENTS_API_URL || 'http://localhost:8000';
-const SHIPMENTS_API_KEY = process.env.SHIPMENTS_API_KEY || '';
+const LOGISTIC_API_URL = process.env.LOGISTIC_API_URL || 'http://localhost:8004';
+const LOGISTIC_API_KEY = process.env.LOGISTIC_API_KEY || '';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ shipmentId: string }> }
-) {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user) {
@@ -20,18 +17,21 @@ export async function GET(
       return rateLimitResponse;
     }
 
-    const { shipmentId } = await params;
-    const response = await fetch(`${SHIPMENTS_API_URL}/v1/shipments/${shipmentId}`, {
+    const { searchParams } = new URL(request.url);
+    const url = new URL(`${LOGISTIC_API_URL}/v1/shipments`);
+    searchParams.forEach((value, key) => url.searchParams.set(key, value));
+
+    const response = await fetch(url.toString(), {
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': SHIPMENTS_API_KEY,
+        'X-API-Key': LOGISTIC_API_KEY,
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(
-        { error: errorData.message || 'Error al obtener shipment' },
+        { error: errorData.message || 'Error al obtener shipments' },
         { status: response.status }
       );
     }
@@ -39,9 +39,9 @@ export async function GET(
     const data = await response.json();
     return addRateLimitHeaders(NextResponse.json(data), rateLimitResult);
   } catch (error: any) {
-    console.error('Error en GET /api/shipments/shipments/[shipmentId]:', error);
+    console.error('Error en GET /api/logistic/v1/shipments:', error);
     return NextResponse.json(
-      { error: error.message || 'Error al obtener shipment' },
+      { error: error.message || 'Error al obtener shipments' },
       { status: 500 }
     );
   }

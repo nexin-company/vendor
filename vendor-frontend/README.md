@@ -56,13 +56,9 @@ PERMIT_API_KEY=tu-api-key-secreta
 VENDOR_API_URL=http://localhost:8001
 VENDOR_API_KEY=tu-api-key-secreta
 
-# Inventory Backend (catálogo externo/precio base/stock/mapping) - próximo
-INVENTORY_API_URL=http://localhost:8002
-INVENTORY_API_KEY=tu-api-key-secreta
-
-# Shipments Backend (tracking/embarques) - próximo
-SHIPMENTS_API_URL=http://localhost:8003
-SHIPMENTS_API_KEY=tu-api-key-secreta
+# Logistics Backend (catálogo externo/precio base/stock/mapping/shipments)
+LOGISTIC_API_URL=http://localhost:8004
+LOGISTIC_API_KEY=tu-api-key-secreta
 
 # NextAuth
 AUTH_GITHUB_ID=tu-github-client-id
@@ -76,8 +72,7 @@ NEXTAUTH_SECRET=tu-secret-key-aleatoria
 - Las API keys viven **solo en el servidor** (Next.js API Routes):
   - `app/api/permit/*` agrega `PERMIT_API_KEY`
   - `app/api/vendor/*` agrega `VENDOR_API_KEY`
-  - (próximo) `app/api/inventory/*` agrega `INVENTORY_API_KEY`
-  - (próximo) `app/api/shipments/*` agrega `SHIPMENTS_API_KEY`
+  - `app/api/logistic/*` agrega `LOGISTIC_API_KEY`
 
 ## 🚀 Desarrollo
 

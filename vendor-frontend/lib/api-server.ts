@@ -27,9 +27,9 @@ const PERMIT_API_KEY = process.env.PERMIT_API_KEY || '';
 const VENDOR_API_URL = process.env.VENDOR_API_URL || PERMIT_API_URL;
 const VENDOR_API_KEY = process.env.VENDOR_API_KEY || PERMIT_API_KEY;
 
-// Para productos externos, consultar directamente a inventory-backend
-const INVENTORY_API_URL = process.env.INVENTORY_API_URL || 'http://localhost:8000';
-const INVENTORY_API_KEY = process.env.INVENTORY_API_KEY || '';
+// Para productos externos, stock, mapeos y shipments, consultar directamente a logistic-backend
+const LOGISTIC_API_URL = process.env.LOGISTIC_API_URL || 'http://localhost:8004';
+const LOGISTIC_API_KEY = process.env.LOGISTIC_API_KEY || '';
 
 if (!PERMIT_API_KEY) {
   console.warn('⚠️ PERMIT_API_KEY no está configurada. Las llamadas al backend pueden fallar.');
@@ -121,14 +121,14 @@ export const usersApi = {
     }, true),
 };
 
-// ==================== PRODUCTOS EXTERNOS (desde Inventory) ====================
-// Nota: Los productos externos se gestionan en inventory-backend
+// ==================== PRODUCTOS EXTERNOS (desde Logistics) ====================
+// Nota: Los productos externos se gestionan en logistic-backend
 // Vendor solo puede consultarlos (solo lectura) para crear órdenes
 
 export const productsApi = {
   /**
-   * Listar productos externos (solo lectura - desde Inventory)
-   * Consulta directamente a inventory-backend
+   * Listar productos externos (solo lectura - desde Logistics)
+   * Consulta directamente a logistic-backend
    */
   getAll: async (filters?: ProductFilters): Promise<{ products: Product[]; total: number; offset: number | null }> => {
     const session = await auth();
@@ -143,12 +143,12 @@ export const productsApi = {
     if (filters?.limit) params.set('limit', filters.limit.toString());
     
     const query = params.toString();
-    const url = `${INVENTORY_API_URL}/v1/external-products${query ? `?${query}` : ''}`;
+    const url = `${LOGISTIC_API_URL}/v1/catalog${query ? `?${query}` : ''}`;
     
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': INVENTORY_API_KEY,
+        'X-API-Key': LOGISTIC_API_KEY,
       },
     });
 
@@ -170,8 +170,8 @@ export const productsApi = {
   },
 
   /**
-   * Obtener producto externo por ID (solo lectura - desde Inventory)
-   * Consulta directamente a inventory-backend
+   * Obtener producto externo por ID (solo lectura - desde Logistics)
+   * Consulta directamente a logistic-backend
    */
   getById: async (id: number): Promise<Product> => {
     const session = await auth();
@@ -179,11 +179,11 @@ export const productsApi = {
       throw new ApiError('No autenticado', 401);
     }
 
-    const url = `${INVENTORY_API_URL}/v1/external-products/${id}`;
+    const url = `${LOGISTIC_API_URL}/v1/catalog/${id}`;
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': INVENTORY_API_KEY,
+        'X-API-Key': LOGISTIC_API_KEY,
       },
     });
 

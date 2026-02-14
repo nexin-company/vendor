@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { applyRateLimit, addRateLimitHeaders } from '@/lib/rate-limit-helper';
 
-// Consultar directamente a inventory-backend para productos externos
-const INVENTORY_API_URL = process.env.INVENTORY_API_URL || 'http://localhost:8000';
-const INVENTORY_API_KEY = process.env.INVENTORY_API_KEY || '';
+// Consultar directamente a logistic-backend para productos externos (catálogo)
+const LOGISTIC_API_URL = process.env.LOGISTIC_API_URL || 'http://localhost:8004';
+const LOGISTIC_API_KEY = process.env.LOGISTIC_API_KEY || '';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,11 +24,11 @@ export async function GET(
     }
 
     const { id } = await params;
-    // Consultar directamente a inventory-backend para productos externos
-    const response = await fetch(`${INVENTORY_API_URL}/v1/external-products/${id}`, {
+    // Consultar directamente a logistic-backend para catálogo externo
+    const response = await fetch(`${LOGISTIC_API_URL}/v1/catalog/${id}`, {
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': INVENTORY_API_KEY,
+        'X-API-Key': LOGISTIC_API_KEY,
       },
     });
 
@@ -51,6 +51,6 @@ export async function GET(
   }
 }
 
-// Nota: PUT y DELETE eliminados - los productos externos se gestionan en inventory-backend
+// Nota: PUT y DELETE eliminados - los productos externos se gestionan en logistic-backend
 // Vendor solo puede consultarlos (solo lectura)
 

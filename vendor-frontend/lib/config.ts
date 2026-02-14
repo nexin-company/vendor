@@ -3,5 +3,5 @@
  * Usar variables de entorno para configurar en diferentes ambientes
  */
 
-export const INVENTORY_FRONTEND_URL = process.env.NEXT_PUBLIC_INVENTORY_FRONTEND_URL || 'https://inventory.juampamillan.com';
+export const LOGISTIC_FRONTEND_URL = process.env.NEXT_PUBLIC_LOGISTIC_FRONTEND_URL || 'https://logistic.juampamillan.com';
 

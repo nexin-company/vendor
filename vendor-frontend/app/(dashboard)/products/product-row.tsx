@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { INVENTORY_FRONTEND_URL } from '@/lib/config';
+import { LOGISTIC_FRONTEND_URL } from '@/lib/config';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -153,11 +153,11 @@ export function Product({ product, onRefresh }: ProductProps) {
                 asChild
                 size="icon" 
                 variant="ghost"
-                title="Los productos externos se gestionan en Inventory"
+                title="Los productos externos se gestionan en Logistics"
               >
-                <Link href={`${INVENTORY_FRONTEND_URL}/external-products/${product.id}`} target="_blank">
+                <Link href={`${LOGISTIC_FRONTEND_URL}/catalog/${product.id}`} target="_blank">
                   <Link2 className="h-4 w-4" />
-                  <span className="sr-only">Ver en Inventory</span>
+                  <span className="sr-only">Ver en Logistics</span>
                 </Link>
               </Button>
             </TooltipTrigger>

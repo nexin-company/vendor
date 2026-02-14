@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { applyRateLimit, addRateLimitHeaders } from '@/lib/rate-limit-helper';
 
-const SHIPMENTS_API_URL = process.env.SHIPMENTS_API_URL || 'http://localhost:8000';
-const SHIPMENTS_API_KEY = process.env.SHIPMENTS_API_KEY || '';
+const LOGISTIC_API_URL = process.env.LOGISTIC_API_URL || 'http://localhost:8004';
+const LOGISTIC_API_KEY = process.env.LOGISTIC_API_KEY || '';
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await auth();
     if (!session?.user) {
@@ -17,21 +20,18 @@ export async function GET(request: NextRequest) {
       return rateLimitResponse;
     }
 
-    const { searchParams } = new URL(request.url);
-    const url = new URL(`${SHIPMENTS_API_URL}/v1/shipments`);
-    searchParams.forEach((value, key) => url.searchParams.set(key, value));
-
-    const response = await fetch(url.toString(), {
+    const { id } = await params;
+    const response = await fetch(`${LOGISTIC_API_URL}/v1/shipments/${id}`, {
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': SHIPMENTS_API_KEY,
+        'X-API-Key': LOGISTIC_API_KEY,
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(
-        { error: errorData.message || 'Error al obtener shipments' },
+        { error: errorData.message || 'Error al obtener shipment' },
         { status: response.status }
       );
     }
@@ -39,9 +39,9 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return addRateLimitHeaders(NextResponse.json(data), rateLimitResult);
   } catch (error: any) {
-    console.error('Error en GET /api/shipments/shipments:', error);
+    console.error('Error en GET /api/logistic/v1/shipments/[id]:', error);
     return NextResponse.json(
-      { error: error.message || 'Error al obtener shipments' },
+      { error: error.message || 'Error al obtener shipment' },
       { status: 500 }
     );
   }

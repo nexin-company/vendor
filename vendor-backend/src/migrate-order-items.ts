@@ -8,8 +8,8 @@
  * 
  * Requiere:
  * - VENDOR_DATABASE_URL: URL de la base de datos de vendor
- * - INVENTORY_API_URL: URL del backend de inventory
- * - INVENTORY_API_KEY: API key para inventory
+ * - LOGISTIC_API_URL: URL del backend de logistics
+ * - LOGISTIC_API_KEY: API key para logistics
  */
 
 import { neon } from '@neondatabase/serverless'
@@ -18,16 +18,16 @@ import { orderItems } from './vendor/orders/schema.js'
 import { eq, and, isNotNull, isNull } from 'drizzle-orm'
 
 const VENDOR_DATABASE_URL = process.env.VENDOR_DATABASE_URL || process.env.DATABASE_URL || ''
-const INVENTORY_API_URL = process.env.INVENTORY_API_URL || 'http://localhost:8000'
-const INVENTORY_API_KEY = process.env.INVENTORY_API_KEY || process.env.VENDOR_API_KEY || ''
+const LOGISTIC_API_URL = process.env.LOGISTIC_API_URL || 'http://localhost:8004'
+const LOGISTIC_API_KEY = process.env.LOGISTIC_API_KEY || process.env.VENDOR_API_KEY || ''
 
 if (!VENDOR_DATABASE_URL) {
   console.error('❌ VENDOR_DATABASE_URL no está configurada')
   process.exit(1)
 }
 
-if (!INVENTORY_API_KEY) {
-  console.error('❌ INVENTORY_API_KEY no está configurada')
+if (!LOGISTIC_API_KEY) {
+  console.error('❌ LOGISTIC_API_KEY no está configurada')
   process.exit(1)
 }
 
@@ -41,18 +41,18 @@ async function getProductMapping(): Promise<Map<number, number>> {
   const mapping = new Map<number, number>()
   
   try {
-    console.log('🔍 Obteniendo mapeo de productos desde Inventory...')
+    console.log('🔍 Obteniendo mapeo de productos desde Logistics...')
     
     // Buscar todos los productos externos que empiecen con VENDOR-
-    const response = await fetch(`${INVENTORY_API_URL}/v1/external-products?q=VENDOR-`, {
+    const response = await fetch(`${LOGISTIC_API_URL}/v1/catalog?q=VENDOR-`, {
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': INVENTORY_API_KEY,
+        'X-API-Key': LOGISTIC_API_KEY,
       },
     })
 
     if (!response.ok) {
-      console.warn('⚠️  No se pudo obtener mapeo desde Inventory')
+      console.warn('⚠️  No se pudo obtener mapeo desde Logistics')
       return mapping
     }
 
@@ -82,7 +82,7 @@ async function getProductMapping(): Promise<Map<number, number>> {
 async function migrate() {
   console.log('🚀 Iniciando migración de order_items...')
   console.log(`📦 Vendor DB: ${VENDOR_DATABASE_URL.substring(0, 30)}...`)
-  console.log(`🔗 Inventory API: ${INVENTORY_API_URL}`)
+  console.log(`🔗 Logistics API: ${LOGISTIC_API_URL}`)
   console.log('')
 
   try {
